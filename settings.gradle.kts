@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Cpatcher"
 include(":app")
-include(":hidden-api")
+include(":stub")
