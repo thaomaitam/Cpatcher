@@ -1,12 +1,11 @@
 // handlers/tiktok/patches/WatermarkRemoval.kt
 package io.github.cpatcher.handlers.tiktok.patches
 
-import io.github.cpatcher.core.arch.IHook
-import io.github.cpatcher.core.arch.ObfsTable
-import io.github.cpatcher.core.arch.createObfsTable
-import io.github.cpatcher.core.arch.hookAllBefore
-import io.github.cpatcher.core.arch.hookAllAfter
-import io.github.cpatcher.core.utils.Logger
+import io.github.cpatcher.arch.IHook
+import io.github.cpatcher.arch.ObfsTable
+import io.github.cpatcher.arch.createObfsTable
+import io.github.cpatcher.arch.hookAllBefore
+import io.github.cpatcher.arch.hookAllAfter
 import org.luckypray.dexkit.query.enums.StringMatchType
 
 class WatermarkRemoval : IHook() {
