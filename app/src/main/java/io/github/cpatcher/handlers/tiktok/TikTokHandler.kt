@@ -1,8 +1,7 @@
 // handlers/tiktok/TikTokHandler.kt
 package io.github.cpatcher.handlers.tiktok
 
-import io.github.cpatcher.core.arch.IHook
-import io.github.cpatcher.core.utils.Logger
+import io.github.cpatcher.arch.IHook
 import io.github.cpatcher.handlers.tiktok.patches.WatermarkRemoval
 import io.github.cpatcher.handlers.tiktok.patches.VideoDownload
 
