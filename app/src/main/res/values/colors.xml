@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background_dark">#1C1B1F</color>
+    <color name="surface_dark">#2C2B30</color>
+    <color name="primary_dark">#A8C7FA</color>
+    <color name="on_surface_dark">#E6E1E5</color>
+    <color name="on_primary_dark">#003366</color>
+    <color name="status_card_inactive">#4A4458</color>
+    <color name="status_card_active">#4CAF50</color>
+</resources>
