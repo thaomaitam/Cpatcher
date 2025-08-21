@@ -1,11 +1,13 @@
 // handlers/tiktok/patches/WatermarkRemoval.kt
 package io.github.cpatcher.handlers.tiktok.patches
 
+import io.github.cpatcher.Logger
 import io.github.cpatcher.arch.IHook
+import io.github.cpatcher.arch.ObfsInfo
 import io.github.cpatcher.arch.ObfsTable
 import io.github.cpatcher.arch.createObfsTable
-import io.github.cpatcher.arch.hookAllBefore
 import io.github.cpatcher.arch.hookAllAfter
+import io.github.cpatcher.arch.hookAllBefore
 import org.luckypray.dexkit.query.enums.StringMatchType
 
 class WatermarkRemoval : IHook() {
@@ -42,7 +44,7 @@ class WatermarkRemoval : IHook() {
                             returnType = "boolean"
                         }
                     }.singleOrNull()?.toObfsInfo()
-                ).filterValues { it != null } as Map<String, ObfsInfo>
+                ).filterValues { it != null }.mapValues { it.value!! } // Sửa lỗi suy luận kiểu
             }
             
             setupWatermarkHooks()

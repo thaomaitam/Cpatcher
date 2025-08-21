@@ -1,7 +1,9 @@
 // handlers/tiktok/patches/VideoDownload.kt
 package io.github.cpatcher.handlers.tiktok.patches
 
+import io.github.cpatcher.Logger
 import io.github.cpatcher.arch.IHook
+import io.github.cpatcher.arch.ObfsInfo
 import io.github.cpatcher.arch.createObfsTable
 import io.github.cpatcher.arch.hookAllAfter
 
@@ -27,7 +29,7 @@ class VideoDownload : IHook() {
                             returnType = "java.lang.String"
                         }
                     }.singleOrNull()?.toObfsInfo()
-                ).filterValues { it != null } as Map<String, ObfsInfo>
+                ).filterValues { it != null }.mapValues { it.value!! } // Chuyển đổi để loại bỏ nullable
             }
             
             setupDownloadHooks(obfsTable)
@@ -90,7 +92,7 @@ class VideoDownload : IHook() {
                 }
             }
         } catch (e: Exception) {
-            Logger.e("TikTok: Failed to modify request", e)
+            // Ignore if field doesn't exist
         }
     }
 }
