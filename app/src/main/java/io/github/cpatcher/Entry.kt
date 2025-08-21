@@ -5,6 +5,7 @@ import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.IXposedHookZygoteInit
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.cpatcher.bridge.LoadPackageParam
+import io.github.cpatcher.handlers.tiktok.TikTokHandler
 
 class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
