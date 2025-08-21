@@ -105,6 +105,18 @@ android {
     lint {
         checkReleaseBuilds = false
     }
+    
+    sourceSets {
+        getByName("master") {
+            java {
+                srcDirs(
+                    "../revanced-patches/extensions/shared/library/src/main/java",
+                    "../revanced-patches/extensions/youtube/src/main/java",
+                    "../revanced-patches/extensions/spotify/src/main/java"
+                )
+            }
+        }
+    }
 }
 
 dependencies {
@@ -113,4 +125,5 @@ dependencies {
     compileOnly(libs.androidx.annotation)
 	implementation(libs.dev.rikka.hidden.compat)
     compileOnly(libs.dev.rikka.hidden.stub)
+    compileOnly(project(":stub"))
 }
