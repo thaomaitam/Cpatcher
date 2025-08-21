@@ -107,7 +107,7 @@ android {
     }
     
     sourceSets {
-        getByName("master") {
+        getByName("main") {
             java {
                 srcDirs(
                     "../revanced-patches/extensions/shared/library/src/main/java",
