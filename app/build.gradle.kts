@@ -111,8 +111,7 @@ android {
             java {
                 srcDirs(
                     "../revanced-source/extensions/shared/library/src/main/java",
-                    "../revanced-source/extensions/youtube/src/main/java",
-                    "../revanced-source/extensions/spotify/src/main/java"
+                    "../revanced-source/extensions/tiktok/src/main/java"
                 )
             }
         }
