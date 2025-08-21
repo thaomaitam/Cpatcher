@@ -56,7 +56,7 @@ android {
                     "src/main/java",
                     // Link ReVanced extension sources (nếu có submodule)
                     // "../revanced-source/extensions/shared/src/main/java",
-                    // "../revanced-source/extensions/youtube/src/main/java"
+                    "../revanced-source/extensions/tiktok/src/main/java"
                 )
                 // Exclude unnecessary files
                 exclude("**/integrations/**")
