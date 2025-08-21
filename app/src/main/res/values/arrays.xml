@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Placeholder for future arrays -->
-    <!--
-    <string-array name="example_array">
-        <item>Example Item 1</item>
-        <item>Example Item 2</item>
+    <string-array name="xposed_scope">
+        <item></item>
     </string-array>
-    -->
-</resources>
+</resources> 

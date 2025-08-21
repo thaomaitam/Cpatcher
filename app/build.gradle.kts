@@ -1,7 +1,7 @@
 // app/build.gradle.kts
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -14,12 +14,21 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
+        
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     
     buildTypes {
         release {
             isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        debug {
+            isMinifyEnabled = false
+            isDebuggable = true
         }
     }
     
@@ -30,6 +39,13 @@ android {
     
     kotlinOptions {
         jvmTarget = "17"
+        
+        // Kotlin compiler optimizations
+        freeCompilerArgs += listOf(
+            "-Xno-param-assertions",
+            "-Xno-call-assertions",
+            "-Xno-receiver-assertions"
+        )
     }
     
     // Source linking cho ReVanced extensions
@@ -38,10 +54,9 @@ android {
             java {
                 srcDirs(
                     "src/main/java",
-                    // Link ReVanced extension sources
-                    "../revanced-source/extensions/shared/src/main/java",
-                    "../revanced-source/extensions/youtube/src/main/java", 
-                    "../revanced-source/extensions/spotify/src/main/java"
+                    // Link ReVanced extension sources (nếu có submodule)
+                    // "../revanced-source/extensions/shared/src/main/java",
+                    // "../revanced-source/extensions/youtube/src/main/java"
                 )
                 // Exclude unnecessary files
                 exclude("**/integrations/**")
@@ -49,10 +64,39 @@ android {
             }
         }
     }
+    
+    packaging {
+        resources {
+            excludes += setOf(
+                "**",
+                "META-INF/*.version",
+                "META-INF/*.kotlin_module",
+                "kotlin/**"
+            )
+        }
+    }
+    
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
 }
 
 dependencies {
-    implementation("org.luckypray:dexkit:2.0.6")
-    compileOnly("de.robv.android.xposed:api:82") 
-    compileOnly("androidx.annotation:annotation:1.9.1")
+    // Core dependencies
+    implementation(libs.dexkit)
+    compileOnly(libs.xposed.api)
+    
+    // Android libraries
+    implementation(libs.bundles.android.core)
+    
+    // JSON processing
+    implementation(libs.gson)
+    
+    // Optional: ReVanced libraries (if using external approach)
+    // implementation(libs.bundles.revanced)
+    
+    // Testing dependencies
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.bundles.testing)
 }

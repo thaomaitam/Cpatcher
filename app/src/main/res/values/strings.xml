@@ -1,33 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">KTAfaker</string>
-    <string name="main_activity_title">KTAfaker - App Configs</string>
-    <string name="fab_add_app_content_description">Add new app configuration</string>
-    <string name="switch_enabled_content_description">Enable or disable spoofing for app</string>
-    <string name="app_name_placeholder">App Name</string>
-    <string name="package_name_placeholder">Package Name</string>
-    <string name="toast_add_app">Add new app config (TBD)</string>
-    <string name="nav_dashboard">Dashboard</string>
-    <string name="status_icon_description">Module status icon</string>
-    <string name="status_inactive_title">Module không kích hoạt</string>
-    <string name="status_inactive_description">Dịch vụ KTAfaker không chạy</string>
-    <string name="status_active_title">Module đã kích hoạt</string>
-    <string name="status_active_description">Dịch vụ KTAfaker đang chạy</string>
-    <string name="management_section_title">Quản lý</string>
-    <string name="manage_apps_title">Quản lý ứng dụng</string>
-    <string name="manage_apps_icon_description">Manage apps icon</string>
-    <string name="backup_restore_section_title">Sao lưu và Khôi phục</string>
-    <string name="backup_title">Sao lưu</string>
-    <string name="backup_icon_description">Backup icon</string>
-    <string name="search_apps_hint">Search apps...</string>
-    <string name="config_detail_title">Configure App</string>
-    <string name="base_profile_label">Base Profile</string>
-    <string name="overrides_label">Overrides</string>
-    <string name="model_hint">Model</string>
-    <string name="brand_hint">Brand</string>
-    <string name="imei_hint">IMEI</string>
-    <string name="android_id_hint">Android ID</string>
-    <string name="select_profile_title">Select Profile</string>
-    <string name="no_profile_selected">No Profile Selected</string>
-    <string name="save">Save</string>
+    <string name="app_name">Cpatcher</string>
 </resources>
