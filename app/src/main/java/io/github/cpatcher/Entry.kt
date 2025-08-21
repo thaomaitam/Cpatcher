@@ -1,11 +1,10 @@
-// Entry.kt (Update existing)
 package io.github.cpatcher
 
+import android.content.res.XModuleResources
 import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
-import io.github.cpatcher.core.bridge.LoadPackageParam as CpatcherParam
-import io.github.cpatcher.core.utils.Logger
-import io.github.cpatcher.handlers.tiktok.TikTokHandler
+import de.robv.android.xposed.IXposedHookZygoteInit
+import de.robv.android.xposed.callbacks.XC_LoadPackage
+import io.github.cpatcher.bridge.LoadPackageParam
 
 class Entry : IXposedHookLoadPackage {
     override fun handleLoadPackage(lpparam: LoadPackageParam) {
