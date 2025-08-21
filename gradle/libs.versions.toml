@@ -4,14 +4,18 @@ kotlin = "2.1.21"
 agp = "8.10.1"
 xposed = "82"
 annotation = "1.9.1"
+hidden-api = "4.4.0"
 
 [libraries]
 dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
 xposed-api = { module = "de.robv.android.xposed:api", version.ref = "xposed" }
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
+dev-rikka-hidden-compat = { module = "dev.rikka.hidden:compat", version.ref = "hidden-api" }
+dev-rikka-hidden-stub = { module = "dev.rikka.hidden:stub", version.ref = "hidden-api" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+refine = { id = "dev.rikka.tools.refine", version = "4.4.0" }
