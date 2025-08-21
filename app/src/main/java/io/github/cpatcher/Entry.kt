@@ -23,7 +23,7 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-        logI("MyInjector: ${lpparam.packageName} ${lpparam.processName}")
+        logI("Cpatcher: ${lpparam.packageName} ${lpparam.processName}")
         val handler = when (lpparam.packageName) {
             "com.ss.android.ugc.trill",      // TikTok Global
             "com.zhiliaoapp.musically" -> {   // TikTok US
