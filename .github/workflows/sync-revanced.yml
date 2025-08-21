@@ -1,0 +1,18 @@
+# .github/workflows/sync-revanced.yml
+name: Sync ReVanced Submodule
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Update submodule
+        run: |
+          git submodule update --remote revanced-source
+          git add revanced-source
+          git commit -m "Auto-update ReVanced submodule" || exit 0
+          git push

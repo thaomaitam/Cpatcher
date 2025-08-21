@@ -1,9 +1,11 @@
-name: CI
+name: Build APK
 
 on:
   workflow_dispatch:
   push:
-    branches: [ 'main' ]
+    branches: [ "SpoofXManager" ]
+    paths:
+      - "app/**"   
 
 jobs:
   linux:
@@ -35,7 +37,7 @@ jobs:
       - name: Upload app
         uses: actions/upload-artifact@v4
         with:
-          name: EzXHepler-Faker
+          name: Cpatcher
           path: app/build/outputs
 
       - name: Set ci tag
