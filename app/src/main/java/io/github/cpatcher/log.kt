@@ -1,22 +1,29 @@
 package io.github.cpatcher
 
 import android.util.Log
+import de.robv.android.xposed.XposedBridge
 
-var logPrefix: String = ""
-const val LOG_TAG = "Cpatcher"
+// Giữ lại các hàm cũ của bạn, nhưng dùng XposedBridge.log sẽ tốt hơn cho module Xposed
+var logPrefix: String = "[Cpatcher] "
 
-fun logD(msg: String, t: Throwable? = null) {
-    Log.d(LOG_TAG, "$logPrefix$msg", t)
+fun logI(msg: String) {
+    XposedBridge.log("$logPrefix$msg")
 }
 
 fun logE(msg: String, t: Throwable? = null) {
-    Log.e(LOG_TAG, "$logPrefix$msg", t)
+    XposedBridge.log("$logPrefix$msg")
+    if (t != null) {
+        XposedBridge.log(t)
+    }
 }
 
-fun logI(msg: String, t: Throwable? = null) {
-    Log.i(LOG_TAG, "$logPrefix$msg", t)
-}
+// THÊM ĐỐI TƯỢNG NÀY VÀO
+object Logger {
+    fun i(msg: String) {
+        logI(msg)
+    }
 
-fun logW(msg: String, t: Throwable? = null) {
-    Log.w(LOG_TAG, "$logPrefix$msg", t)
+    fun e(msg: String, t: Throwable? = null) {
+        logE(msg, t)
+    }
 }
