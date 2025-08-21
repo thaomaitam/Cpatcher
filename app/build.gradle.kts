@@ -6,7 +6,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-	alias(libs.plugins.refine)
+    alias(libs.plugins.refine)
 }
 
 val keystorePropertiesFile: File = rootProject.file("keystore.properties")
@@ -32,7 +32,7 @@ val gitCommitCount = "git rev-list HEAD --count".execute().toInt()
 val gitCommitHash = "git rev-parse --verify --short HEAD".execute()
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     signingConfigs {
         if (keystoreProperties != null) {
             create("release") {
@@ -46,12 +46,12 @@ android {
 
     defaultConfig {
         applicationId = "io.github.cpatcher"
-        minSdk = 29
-        targetSdk = 35
+        minSdk = 26
+        targetSdk = 36
         versionCode = 1
         versionName = "$gitCommitCount-$gitCommitHash"
 
-        base.archivesName = "KTA-$versionName"
+        base.archivesName = "MyInjector-$versionName"
         ndk {
             //noinspection ChromeOsAbiSupport
             abiFilters += "arm64-v8a"
@@ -110,9 +110,9 @@ android {
         getByName("main") {
             java {
                 srcDirs(
-                    "../revanced-patches/extensions/shared/library/src/main/java",
-                    "../revanced-patches/extensions/youtube/src/main/java",
-                    "../revanced-patches/extensions/spotify/src/main/java"
+                    "../revanced-source/extensions/shared/library/src/main/java",
+                    "../revanced-source/extensions/youtube/src/main/java",
+                    "../revanced-source/extensions/spotify/src/main/java"
                 )
             }
         }
@@ -123,7 +123,7 @@ dependencies {
     compileOnly(libs.xposed.api)
     implementation(libs.dexkit)
     compileOnly(libs.androidx.annotation)
-	implementation(libs.dev.rikka.hidden.compat)
-    compileOnly(libs.dev.rikka.hidden.stub)
     compileOnly(project(":stub"))
+    implementation(libs.dev.rikka.hidden.compat)
+    compileOnly(libs.dev.rikka.hidden.stub)
 }
