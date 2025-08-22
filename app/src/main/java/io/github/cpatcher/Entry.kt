@@ -28,6 +28,9 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
         val handler = when (lpparam.packageName) {
             "com.termux" -> TermuxHandler()
             "com.spotify.music" -> SpotifyHandler()
+            "com.ss.android.ugc.trill",  // TikTok international
+        "com.zhiliaoapp.musically"   // TikTok US/Musical.ly
+        -> TikTokHandler()
             else -> return
         }
         logPrefix = "[${handler.javaClass.simpleName}] "
