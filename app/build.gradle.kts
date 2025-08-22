@@ -106,23 +106,12 @@ android {
         checkReleaseBuilds = false
     }
     
-    sourceSets {
-        getByName("main") {
-            java {
-                srcDirs(
-                    "../revanced-source/extensions/shared/library/src/main/java",
-                    "../revanced-source/extensions/tiktok/src/main/java"
-                )
-            }
-        }
-    }
 }
 
 dependencies {
     compileOnly(libs.xposed.api)
     implementation(libs.dexkit)
     compileOnly(libs.androidx.annotation)
-    compileOnly(project(":stub"))
     implementation(libs.dev.rikka.hidden.compat)
     compileOnly(libs.dev.rikka.hidden.stub)
 }
