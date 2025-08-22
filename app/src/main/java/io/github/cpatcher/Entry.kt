@@ -6,6 +6,7 @@ import de.robv.android.xposed.IXposedHookZygoteInit
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.cpatcher.bridge.LoadPackageParam
 import io.github.cpatcher.handlers.Spotify.SpotifyHandler
+import io.github.cpatcher.handlers.TermuxHandler
 
 class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
@@ -25,6 +26,7 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         logI("Cpatcher: ${lpparam.packageName} ${lpparam.processName}")
         val handler = when (lpparam.packageName) {
+            "com.termux" -> TermuxHandler()
             "com.spotify.music" -> SpotifyHandler()
             else -> return
         }
