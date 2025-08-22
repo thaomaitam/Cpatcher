@@ -105,7 +105,6 @@ android {
     lint {
         checkReleaseBuilds = false
     }
-    
 }
 
 dependencies {
