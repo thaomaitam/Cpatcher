@@ -1,4 +1,4 @@
-name: rm action
+name: Xoá Lịch sử Action Thủ công
 
 on:
   workflow_dispatch:
@@ -6,20 +6,18 @@ on:
       days:
         description: 'Số ngày lưu giữ lịch sử các lần chạy (cũ hơn sẽ bị xoá).'
         required: true
-        default: '7'
+        default: '30' # Mặc định là 30 ngày
       keep_minimum_runs:
         description: 'Số lần chạy tối thiểu muốn giữ lại.'
         required: true
-        default: '5'
+        default: '10' # Mặc định giữ lại 10 lần chạy
 
 jobs:
   delete-runs:
     runs-on: ubuntu-latest
     steps:
-      - name: Xoá các lần chạy cũ
-        uses: matt-ball/delete-workflow-runs@v2
+      - name: Xoá các lần chạy cũ của workflow
+        uses: GitRML/delete-workflow-runs@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
           retain_days: ${{ github.event.inputs.days }}
           keep_minimum_runs: ${{ github.event.inputs.keep_minimum_runs }}
