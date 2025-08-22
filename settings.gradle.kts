@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Cpatcher"
 include(":app")
-include(":stub")
+
