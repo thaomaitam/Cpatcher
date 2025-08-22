@@ -7,6 +7,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.cpatcher.bridge.LoadPackageParam
 import io.github.cpatcher.handlers.Spotify.SpotifyHandler
 import io.github.cpatcher.handlers.TermuxHandler
+import io.github.cpatcher.handlers.TikTokHandler
 
 class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
@@ -28,9 +29,8 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
         val handler = when (lpparam.packageName) {
             "com.termux" -> TermuxHandler()
             "com.spotify.music" -> SpotifyHandler()
-            "com.ss.android.ugc.trill",  // TikTok international
-        "com.zhiliaoapp.musically"   // TikTok US/Musical.ly
-        -> TikTokHandler()
+            "com.ss.android.ugc.trill",
+            "com.zhiliaoapp.musically" -> TikTokHandler()
             else -> return
         }
         logPrefix = "[${handler.javaClass.simpleName}] "
