@@ -5,7 +5,7 @@ import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.IXposedHookZygoteInit
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.cpatcher.bridge.LoadPackageParam
-import io.github.cpatcher.handlers.tiktok.TikTokHandler
+import io.github.cpatcher.handlers.Spotify.SpotifyHandler
 
 class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
@@ -22,26 +22,13 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
         modulePath = startupParam.modulePath
     }
 
-        override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
-        logI("Cpatcher: Hooking ${lpparam.packageName} (${lpparam.processName})")
-
-        // 1. Tạo đối tượng handler trước
+    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
+        logI("Cpatcher: ${lpparam.packageName} ${lpparam.processName}")
         val handler = when (lpparam.packageName) {
-            "com.ss.android.ugc.trill",      // TikTok Global
-            "com.zhiliaoapp.musically" -> {   // TikTok US
-                logI("Entry: Found TikTok, creating handler for ${lpparam.packageName}")
-                TikTokHandler() // Chỉ trả về đối tượng, không gọi hook ở đây
-            }
-            // Add other apps later
-            // "com.google.android.youtube" -> YouTubeHandler()
-            // "com.spotify.music" -> SpotifyHandler()
-            else -> return // Nếu không phải app cần hook thì thoát
+            "com.spotify.music" -> SpotifyHandler()
+            else -> return
         }
-
-        // 2. Cập nhật logPrefix
         logPrefix = "[${handler.javaClass.simpleName}] "
-        
-        // 3. Bây giờ mới gọi hàm hook trên đối tượng handler đã tạo
         handler.hook(LoadPackageParam(lpparam))
     }
 }
