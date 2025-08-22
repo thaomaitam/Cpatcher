@@ -51,7 +51,7 @@ android {
         versionCode = 1
         versionName = "$gitCommitCount-$gitCommitHash"
 
-        base.archivesName = "MyInjector-$versionName"
+        base.archivesName = "Cpatcher-$versionName"
         ndk {
             //noinspection ChromeOsAbiSupport
             abiFilters += "arm64-v8a"
