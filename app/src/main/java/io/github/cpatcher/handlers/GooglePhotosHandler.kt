@@ -130,7 +130,7 @@ class GooglePhotosHandler : IHook() {
         }
         
         // Hook hasSystemFeature(String)
-        apmClass.hookAllBefore("hasSystemFeature", String::class.java) { param ->
+        apmClass.hookBefore("hasSystemFeature", String::class.java) { param ->
             val feature = param.args[0] as String
             when (feature) {
                 in FEATURES_TO_ENABLE -> {
@@ -145,7 +145,7 @@ class GooglePhotosHandler : IHook() {
         }
         
         // Hook hasSystemFeature(String, int)
-        apmClass.hookAllBefore("hasSystemFeature", String::class.java, Int::class.java) { param ->
+        apmClass.hookBefore("hasSystemFeature", String::class.java, Int::class.java) { param ->
             val feature = param.args[0] as String
             when (feature) {
                 in FEATURES_TO_ENABLE -> {
