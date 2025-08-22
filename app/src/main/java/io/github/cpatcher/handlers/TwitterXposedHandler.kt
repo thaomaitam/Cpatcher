@@ -5,6 +5,7 @@ import android.os.Process
 import android.view.View
 import io.github.cpatcher.arch.IHook
 import io.github.cpatcher.arch.hookAllAfter
+import io.github.cpatcher.logI
 
 val TWITTER_BROKEN_ACTIVITIES = listOf(
     "com.twitter.app.main.MainActivity",
