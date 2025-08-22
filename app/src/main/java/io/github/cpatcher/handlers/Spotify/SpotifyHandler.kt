@@ -1,4 +1,4 @@
-package io.github.cpatcher
+package io.github.cpatcher.handlers.Spotify
 
 import io.github.cpatcher.arch.IHook
 import io.github.cpatcher.arch.ObfsInfo
