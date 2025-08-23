@@ -1,173 +1,215 @@
 package io.github.cpatcher.handlers.Spotify
 
-import android.content.ClipData
 import io.github.cpatcher.arch.*
 import io.github.cpatcher.logI
-import io.github.cpatcher.logE
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XC_MethodReplacement
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
-import org.luckypray.dexkit.query.enums.StringMatchType
-import java.lang.reflect.Modifier
 
 class SpotifyHandler : IHook() {
     companion object {
         private const val KEY_PRODUCT_STATE = "product_state"
         private const val KEY_QUERY_PARAMS = "query_params"
-        private const val KEY_SHARE_URL = "share_url"
+        private const val KEY_SHARE_COPY = "share_copy"
+        private const val KEY_SHARE_FORMAT = "share_format"
         private const val KEY_NAV_BAR = "nav_bar"
         private const val KEY_WIDGET = "widget"
+        private const val KEY_CONTEXT_JSON = "context_json"
+        
+        // Thread-local storage for nested hook context
+        private val shareContext = ThreadLocal<Boolean>()
     }
 
     override fun onHook() {
-        val tbl = createObfsTable("spotify", 2) { bridge ->
+        val tbl = createObfsTable("spotify_premium", 3) { bridge ->
             val obfsMap = mutableMapOf<String, ObfsInfo>()
             
-            // 1. ProductStateProto - simplified fingerprint
+            // 1. ProductStateProto getter
             bridge.findClass {
                 matcher {
                     usingStrings("com.spotify.remoteconfig.internal.ProductStateProto")
                 }
-            }.firstOrNull()?.let { clazz ->
-                clazz.methods.find { 
-                    it.returnTypeName == "java.util.Map" 
-                }?.let { method ->
-                    obfsMap[KEY_PRODUCT_STATE] = method.toObfsInfo()
-                    logI("Found ProductState: ${method.className}.${method.methodName}")
-                }
+            }.firstOrNull()?.methods?.find { 
+                it.returnTypeName == "java.util.Map" 
+            }?.let {
+                obfsMap[KEY_PRODUCT_STATE] = it.toObfsInfo()
             }
             
-            // 2. Query parameters builder
+            // 2. Query parameters
             bridge.findMethod {
                 matcher {
                     usingStrings("trackRows", "device_type:tablet")
                 }
-            }.firstOrNull()?.let { method ->
-                obfsMap[KEY_QUERY_PARAMS] = method.toObfsInfo()
-                logI("Found QueryParams: ${method.className}.${method.methodName}")
+            }.firstOrNull()?.let {
+                obfsMap[KEY_QUERY_PARAMS] = it.toObfsInfo()
             }
             
-            // 3. Share URL formatter - multiple variants
-            val shareMethod = bridge.findMethod {
+            // 3. Share copy URL - dual fingerprint
+            val shareCopy = bridge.findMethod {
                 matcher {
                     usingStrings("clipboard", "Spotify Link")
+                    name = "invokeSuspend"
                 }
             }.firstOrNull() ?: bridge.findMethod {
                 matcher {
                     usingStrings("clipboard", "createNewSession failed")
+                    name = "apply"
                 }
             }.firstOrNull()
             
-            shareMethod?.let { method ->
-                obfsMap[KEY_SHARE_URL] = method.toObfsInfo()
-                logI("Found ShareURL: ${method.className}.${method.methodName}")
+            shareCopy?.let {
+                obfsMap[KEY_SHARE_COPY] = it.toObfsInfo()
             }
             
-            // 4. Navigation bar - simplified
+            // 4. Share format URL
+            bridge.findMethod {
+                matcher {
+                    returnType = "java.lang.String"
+                    paramTypes(null, "java.lang.String")
+                    usingNumbers('\n'.code)
+                }
+            }.filter {
+                !it.usingStrings.contains("")
+            }.firstOrNull()?.let {
+                obfsMap[KEY_SHARE_FORMAT] = it.toObfsInfo()
+            }
+            
+            // 5. Context JSON
+            bridge.findMethod {
+                matcher {
+                    name = "fromJson"
+                    declaredClass {
+                        usingStrings("voiceassistants.playermodels.ContextJsonAdapter")
+                    }
+                }
+            }.firstOrNull()?.let {
+                obfsMap[KEY_CONTEXT_JSON] = it.toObfsInfo()
+            }
+            
+            // 6. Navigation bar
             bridge.findClass {
                 matcher {
                     usingStrings("NavigationBarItemSet(")
                 }
-            }.firstOrNull()?.let { clazz ->
-                clazz.methods.find { 
-                    it.isConstructor 
-                }?.let { constructor ->
-                    obfsMap[KEY_NAV_BAR] = constructor.toObfsInfo()
-                    logI("Found NavBar: ${constructor.className}")
-                }
+            }.firstOrNull()?.methods?.find { 
+                it.isConstructor 
+            }?.let {
+                obfsMap[KEY_NAV_BAR] = it.toObfsInfo()
             }
             
-            // 5. Widget permission
+            // 7. Widget permission
             bridge.findMethod {
                 matcher {
                     usingStrings("android.permission.BIND_APPWIDGET")
                 }
-            }.firstOrNull()?.let { method ->
-                obfsMap[KEY_WIDGET] = method.toObfsInfo()
-                logI("Found Widget: ${method.className}.${method.methodName}")
+            }.firstOrNull()?.let {
+                obfsMap[KEY_WIDGET] = it.toObfsInfo()
             }
             
             obfsMap
         }
         
-        // Runtime hooks implementation
+        // Runtime Hooking Phase
         
-        // 1. Unlock Premium
+        // 1. Premium attributes override
         tbl[KEY_PRODUCT_STATE]?.let { info ->
-            findClass(info.className).hookAfter(info.memberName) { param ->
+            findClass(info.className).hookAllAfter(info.memberName) { param ->
                 @Suppress("UNCHECKED_CAST")
-                val attributesMap = param.result as? MutableMap<String, Any>
-                attributesMap?.apply {
+                (param.result as? MutableMap<String, Any>)?.apply {
                     put("on-demand", "1")
                     put("high-quality-streaming", "1")
                     put("offline", "1")
                     put("ads", "0")
                     put("skip-limit", "0")
                     put("shuffle-restricted", "0")
-                    logI("Premium attributes overridden")
                 }
             }
         }
         
-        // 2. Enable popular tracks
+        // 2. Query parameter enhancement
         tbl[KEY_QUERY_PARAMS]?.let { info ->
-            findClass(info.className).hookAfter(info.memberName) { param ->
-                val result = param.result?.toString() ?: return@hookAfter
+            findClass(info.className).hookAllAfter(info.memberName) { param ->
+                val result = param.result?.toString() ?: return@hookAllAfter
                 if (result.contains("checkDeviceCapability=")) {
-                    param.result = XposedBridge.invokeOriginalMethod(
-                        param.method, 
-                        param.thisObject, 
-                        arrayOf(param.args[0], true)
-                    )
-                    logI("Popular tracks enabled")
-                }
-            }
-        }
-        
-        // 3. Sanitize share URLs
-        tbl[KEY_SHARE_URL]?.let { info ->
-            val clazz = findClass(info.className)
-            
-            // Hook with nested ClipData interception
-            clazz.hook(info.memberName, object : XC_MethodHook() {
-                override fun beforeHookedMethod(param: MethodHookParam) {
-                    // Set up nested hook for ClipData
-                    XposedHelpers.findAndHookMethod(
-                        ClipData::class.java,
-                        "newPlainText",
-                        CharSequence::class.java,
-                        CharSequence::class.java,
-                        object : XC_MethodHook() {
-                            override fun beforeHookedMethod(innerParam: MethodHookParam) {
-                                val url = innerParam.args[1] as? String ?: return
-                                innerParam.args[1] = sanitizeUrl(url)
-                            }
-                        }
-                    )
-                }
-            })
-        }
-        
-        // 4. Hide Create button
-        tbl[KEY_NAV_BAR]?.let { info ->
-            findClass(info.className).hookBefore(info.memberName) { param ->
-                param.args.forEachIndexed { index, arg ->
-                    if (isCreateButton(arg)) {
-                        param.args[index] = null
-                        logI("Hidden Create button at index $index")
+                    param.method.invoke(param.thisObject, param.args[0], true)?.let {
+                        param.result = it
                     }
                 }
             }
         }
         
-        // 5. Fix widget permission
-        tbl[KEY_WIDGET]?.let { info ->
-            findClass(info.className).hookReplace(info.memberName) { 
-                true // Force return true
+        // 3. Share copy URL sanitization - simplified approach
+        tbl[KEY_SHARE_COPY]?.let { info ->
+            findClass(info.className).hookAllBefore(info.memberName) { param ->
+                shareContext.set(true)
             }
-            logI("Widget permission granted")
+            
+            findClass(info.className).hookAllAfter(info.memberName) { param ->
+                shareContext.remove()
+            }
         }
+        
+        // Hook ClipData globally when share context is active
+        android.content.ClipData::class.java.hookBefore(
+            "newPlainText",
+            CharSequence::class.java,
+            CharSequence::class.java
+        ) { param ->
+            if (shareContext.get() == true) {
+                (param.args[1] as? String)?.let { url ->
+                    param.args[1] = sanitizeUrl(url)
+                }
+            }
+        }
+        
+        // 4. Share format URL sanitization
+        tbl[KEY_SHARE_FORMAT]?.let { info ->
+            findClass(info.className).hookAllBefore(info.memberName) { param ->
+                (param.args[1] as? String)?.let { url ->
+                    param.args[1] = sanitizeUrl(url)
+                }
+            }
+        }
+        
+        // 5. Context JSON station removal
+        tbl[KEY_CONTEXT_JSON]?.let { info ->
+            findClass(info.className).hookAllAfter(info.memberName) { param ->
+                param.result?.let { result ->
+                    val clazz = result.javaClass
+                    
+                    // Process uri field
+                    clazz.declaredFields.find { it.name == "uri" }?.let { field ->
+                        field.isAccessible = true
+                        (field.get(result) as? String)?.let { uri ->
+                            field.set(result, uri.replace("station:", ""))
+                        }
+                    }
+                    
+                    // Process url field
+                    clazz.declaredFields.find { it.name == "url" }?.let { field ->
+                        field.isAccessible = true
+                        (field.get(result) as? String)?.let { url ->
+                            field.set(result, url.replace("station:", ""))
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 6. Navigation bar Create button removal
+        tbl[KEY_NAV_BAR]?.let { info ->
+            findClass(info.className).hookAllBefore(info.memberName) { param ->
+                param.args.forEachIndexed { index, arg ->
+                    if (isCreateButton(arg)) {
+                        param.args[index] = null
+                    }
+                }
+            }
+        }
+        
+        // 7. Widget permission bypass
+        tbl[KEY_WIDGET]?.let { info ->
+            findClass(info.className).hookAllConstant(info.memberName, true)
+        }
+        
+        logI("SpotifyHandler: All hooks applied successfully")
     }
     
     private fun sanitizeUrl(url: String): String {
@@ -179,13 +221,9 @@ class SpotifyHandler : IHook() {
     }
     
     private fun isCreateButton(item: Any?): Boolean {
-        if (item == null) return false
-        return try {
-            val className = item.javaClass.simpleName
-            className.contains("Create", ignoreCase = true) || 
-            className.contains("Plus", ignoreCase = true)
-        } catch (e: Exception) {
-            false
-        }
+        return item?.javaClass?.simpleName?.let { name ->
+            name.contains("Create", ignoreCase = true) || 
+            name.contains("Plus", ignoreCase = true)
+        } ?: false
     }
 }
