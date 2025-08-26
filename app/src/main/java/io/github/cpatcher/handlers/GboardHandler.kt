@@ -1,6 +1,7 @@
 package io.github.cpatcher.handlers
 
 import android.content.Context
+import android.graphics.Insets
 import android.graphics.Rect
 import android.inputmethodservice.InputMethodService
 import android.os.Build
@@ -10,6 +11,7 @@ import android.view.Window
 import android.view.WindowInsets
 import de.robv.android.xposed.XC_MethodHook
 import io.github.cpatcher.arch.IHook
+import io.github.cpatcher.arch.ObfsInfo
 import io.github.cpatcher.arch.createObfsTable
 import io.github.cpatcher.arch.findClassN
 import io.github.cpatcher.arch.getObj
@@ -27,6 +29,7 @@ import io.github.cpatcher.bridge.HookParam
 import io.github.cpatcher.logE
 import io.github.cpatcher.logI
 import org.luckypray.dexkit.DexKitBridge
+import org.luckypray.dexkit.query.enums.Modifier
 import org.luckypray.dexkit.query.enums.StringMatchType
 import java.lang.reflect.Method
 
@@ -53,7 +56,7 @@ class GboardHandler : IHook() {
         private const val KEY_COMPUTE_INSETS = "compute_insets"
         private const val KEY_UPDATE_PADDING = "update_keyboard_padding"
         private const val KEY_NAVIGATION_HEIGHT = "get_navigation_bar_height"
-        private const parameter KEY_APPLY_WINDOW_INSETS = "apply_window_insets"
+        private const val KEY_APPLY_WINDOW_INSETS = "apply_window_insets"
         
         // Configuration constants
         private const val MINIMAL_BOTTOM_PADDING = 0 // Pixels
@@ -118,7 +121,7 @@ class GboardHandler : IHook() {
             bridge.findMethod {
                 matcher {
                     usingStrings = listOf("keyboard_height", "padding_bottom", "updatePadding")
-                    modifiers = org.luckypray.dexkit.query.enums.FieldModifier.PUBLIC
+                    modifiers = Modifier.PUBLIC
                 }
             }.firstOrNull()?.let {
                 table[KEY_UPDATE_PADDING] = it.toObfsInfo()
@@ -134,7 +137,7 @@ class GboardHandler : IHook() {
                 matcher {
                     usingStrings = listOf("navigation_bar_height", "nav_bar_height")
                     returnType = "int"
-                    paramCount = 0..1
+                    // Accept methods with 0 or 1 parameter
                 }
             }.firstOrNull()?.let {
                 table[KEY_NAVIGATION_HEIGHT] = it.toObfsInfo()
@@ -234,14 +237,20 @@ class GboardHandler : IHook() {
                     targetClass.hookBefore(info.memberName) { param ->
                         (param.args[0] as? WindowInsets)?.let { insets ->
                             // Create modified insets with zero navigation bar
-                            val modifiedInsets = WindowInsets.Builder(insets)
-                                .setSystemWindowInsets(
-                                    insets.systemWindowInsetLeft,
-                                    insets.systemWindowInsetTop,
-                                    insets.systemWindowInsetRight,
-                                    0 // Zero bottom inset
-                                )
-                                .build()
+                            val modifiedInsets = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                WindowInsets.Builder(insets)
+                                    .setSystemWindowInsets(
+                                        Insets.of(
+                                            insets.systemWindowInsetLeft,
+                                            insets.systemWindowInsetTop,
+                                            insets.systemWindowInsetRight,
+                                            0 // Zero bottom inset
+                                        )
+                                    )
+                                    .build()
+                            } else {
+                                insets // Fallback for older API levels
+                            }
                             param.args[0] = modifiedInsets
                         }
                     }
@@ -318,13 +327,14 @@ class GboardHandler : IHook() {
     private fun implementFallbackStrategy() {
         // Fallback: Hook all setPadding calls in Gboard context
         runCatching {
-            View::class.java.hookBefore(
+            val setPaddingMethod = View::class.java.getDeclaredMethod(
                 "setPadding",
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType
-            ) { param ->
+                java.lang.Integer.TYPE,
+                java.lang.Integer.TYPE,
+                java.lang.Integer.TYPE,
+                java.lang.Integer.TYPE
+            )
+            setPaddingMethod.hookBefore { param ->
                 // Only modify if this is keyboard-related view
                 val view = param.thisObject as? View
                 if (isKeyboardRelatedView(view)) {
