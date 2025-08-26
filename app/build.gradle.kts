@@ -110,7 +110,7 @@ android {
 dependencies {
     compileOnly(libs.xposed.api)
     implementation(libs.dexkit)
-    compileOnly(libs.androidx.annotation)
+    implementation(libs.androidx.annotation.jvm)
     implementation(libs.dev.rikka.hidden.compat)
     compileOnly(libs.dev.rikka.hidden.stub)
 }
