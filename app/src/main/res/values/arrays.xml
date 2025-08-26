@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="xposed_scope">
-        <item>com.spotify.music</item>
+        <item>com.termux</item>
+        <item>com.android.systemui</item>
     </string-array>
 </resources> 
