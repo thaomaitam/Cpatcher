@@ -27,10 +27,7 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
         logI("Cpatcher: ${lpparam.packageName} ${lpparam.processName}")
         val handler = when (lpparam.packageName) {
             "com.termux" -> TermuxHandler()
-            "com.android.systemui" -> {
-                if (lpparam.processName == "com.android.systemui") QslockHandler
-                else return
-            }
+            "com.android.systemui" -> QslockHandler()
             else -> return
         }
         logPrefix = "[${handler.javaClass.simpleName}] "
