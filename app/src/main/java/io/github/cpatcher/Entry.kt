@@ -7,6 +7,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.cpatcher.bridge.LoadPackageParam
 import io.github.cpatcher.handlers.QslockHandler
 import io.github.cpatcher.handlers.TermuxHandler
+import io.github.cpatcher.handlers.telegram.TelegramHandler
 
 class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
@@ -28,6 +29,18 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
         val handler = when (lpparam.packageName) {
             "com.termux" -> TermuxHandler()
             "com.android.systemui" -> QslockHandler()
+			in listOf(
+                "org.telegram.messenger",
+                "org.telegram.messenger.web",
+                "org.telegram.messenger.beta",
+                "org.telegram.plus",
+                "com.exteragram.messenger",
+                "com.radolyn.ayugram",
+                "uz.unnarsx.cherrygram",
+                "xyz.nextalone.nagram",
+                "nu.gpu.nagram",
+                "com.xtaolabs.pagergram"
+            ) -> TelegramHandler
             else -> return
         }
         logPrefix = "[${handler.javaClass.simpleName}] "
