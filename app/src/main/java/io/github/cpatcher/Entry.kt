@@ -29,18 +29,6 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
         val handler = when (lpparam.packageName) {
             "com.termux" -> TermuxHandler()
             "com.android.systemui" -> QslockHandler()
-			in listOf(
-                "org.telegram.messenger",
-                "org.telegram.messenger.web",
-                "org.telegram.messenger.beta",
-                "org.telegram.plus",
-                "com.exteragram.messenger",
-                "com.radolyn.ayugram",
-                "uz.unnarsx.cherrygram",
-                "xyz.nextalone.nagram",
-                "nu.gpu.nagram",
-                "com.xtaolabs.pagergram"
-            ) -> TelegramHandler
             else -> return
         }
         logPrefix = "[${handler.javaClass.simpleName}] "

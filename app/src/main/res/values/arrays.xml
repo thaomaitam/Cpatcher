@@ -3,6 +3,5 @@
     <string-array name="xposed_scope">
         <item>com.termux</item>
         <item>com.android.systemui</item>
-		<item>org.telegram.messenger</item>
     </string-array>
 </resources> 
