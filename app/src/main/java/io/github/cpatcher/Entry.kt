@@ -7,6 +7,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.cpatcher.bridge.LoadPackageParam
 import io.github.cpatcher.handlers.QslockHandler
 import io.github.cpatcher.handlers.TermuxHandler
+import io.github.cpatcher.handlers.ScreenshotEnablerHandler
 
 class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
@@ -27,7 +28,29 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
         logI("Cpatcher: ${lpparam.packageName} ${lpparam.processName}")
         val handler = when (lpparam.packageName) {
             "com.termux" -> TermuxHandler()
-            "com.android.systemui" -> QslockHandler()
+            "android" -> {
+    when (lpparam.processName) {
+        "android" -> {
+            // system_server process - Deploy framework hooks
+            logI("Injecting into system_server (PID: ${android.os.Process.myPid()})")
+            ScreenshotEnablerHandler()
+        }
+        "com.android.systemui" -> {
+            // SystemUI process - Different hook strategy
+            logI("Detected SystemUI subprocess - skipping framework hooks")
+            return
+        }
+        else -> {
+            // Unknown android package subprocess
+            logW("Unknown android subprocess: ${lpparam.processName}")
+            return
+        }
+    }
+}
+            "com.android.systemui" -> {
+                if (lpparam.processName == "com.android.systemui") QslockHandler
+                else return
+            }
             else -> return
         }
         logPrefix = "[${handler.javaClass.simpleName}] "
