@@ -1,15 +1,16 @@
 package io.github.cpatcher.handlers
 
 import android.content.Context
-import android.app.StatusBarManager
 import io.github.cpatcher.arch.IHook
 import io.github.cpatcher.arch.getObj
 import io.github.cpatcher.arch.hookAfter
+import io.github.cpatcher.bridge.HookParam  // Critical import addition
 import io.github.cpatcher.logE
 import io.github.cpatcher.logI
 
 /**
  * QslockHandler: Quick Settings Lockscreen Security Enhancement
+ * Version 2: Compilation-compliant implementation
  * 
  * Technical Architecture:
  * - Intercepts KeyguardDisplayManager state transitions
@@ -42,7 +43,7 @@ class QslockHandler : IHook() {
             keyguardDisplayManager.hookAfter(
                 METHOD_UPDATE_DISPLAYS,
                 Boolean::class.java  // Single boolean parameter
-            ) { param ->
+            ) { param ->  // Implicit HookParam type inference
                 executeQuickSettingsControl(param)
             }
             
@@ -65,6 +66,8 @@ class QslockHandler : IHook() {
      * 2. Acquire StatusBarManager service reference
      * 3. Apply appropriate disable2 flag configuration
      * 4. Implement comprehensive error isolation
+     * 
+     * @param param HookParam containing method invocation context
      */
     private fun executeQuickSettingsControl(param: HookParam) {
         try {
@@ -109,6 +112,9 @@ class QslockHandler : IHook() {
      * - Cross-version compatibility via reflection
      * - Graceful degradation on API variations
      * - Isolated failure domain
+     * 
+     * @param statusBarManager Service instance obtained via getSystemService
+     * @param flag DISABLE2_* constant for state control
      */
     private fun applyDisableFlag(statusBarManager: Any, flag: Int) {
         try {
