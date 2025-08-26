@@ -9,14 +9,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowInsets
-import de.robv.android.xposed.XC_MethodHook
 import io.github.cpatcher.arch.IHook
 import io.github.cpatcher.arch.ObfsInfo
 import io.github.cpatcher.arch.createObfsTable
-import io.github.cpatcher.arch.findClassN
 import io.github.cpatcher.arch.getObj
 import io.github.cpatcher.arch.getObjAs
-import io.github.cpatcher.arch.getObjAsN
 import io.github.cpatcher.arch.hook
 import io.github.cpatcher.arch.hookAfter
 import io.github.cpatcher.arch.hookAllAfter
@@ -29,13 +26,11 @@ import io.github.cpatcher.bridge.HookParam
 import io.github.cpatcher.logE
 import io.github.cpatcher.logI
 import org.luckypray.dexkit.DexKitBridge
-import org.luckypray.dexkit.query.enums.Modifier
-import org.luckypray.dexkit.query.enums.StringMatchType
 import java.lang.reflect.Method
 
 /**
  * GboardHandler: IME Navigation Bar Spacer Elimination Module
- * Version: 1.0
+ * Version: 3.0 - Production-Ready Configuration
  * 
  * Technical Architecture:
  * - Intercepts InputMethodService window inset calculations
@@ -121,7 +116,7 @@ class GboardHandler : IHook() {
             bridge.findMethod {
                 matcher {
                     usingStrings = listOf("keyboard_height", "padding_bottom", "updatePadding")
-                    modifiers = Modifier.PUBLIC
+                    // Removed modifier constraint for broader matching
                 }
             }.firstOrNull()?.let {
                 table[KEY_UPDATE_PADDING] = it.toObfsInfo()
@@ -137,7 +132,7 @@ class GboardHandler : IHook() {
                 matcher {
                     usingStrings = listOf("navigation_bar_height", "nav_bar_height")
                     returnType = "int"
-                    // Accept methods with 0 or 1 parameter
+                    // Removed paramCount constraint for flexibility
                 }
             }.firstOrNull()?.let {
                 table[KEY_NAVIGATION_HEIGHT] = it.toObfsInfo()
@@ -237,20 +232,16 @@ class GboardHandler : IHook() {
                     targetClass.hookBefore(info.memberName) { param ->
                         (param.args[0] as? WindowInsets)?.let { insets ->
                             // Create modified insets with zero navigation bar
-                            val modifiedInsets = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                WindowInsets.Builder(insets)
-                                    .setSystemWindowInsets(
-                                        Insets.of(
-                                            insets.systemWindowInsetLeft,
-                                            insets.systemWindowInsetTop,
-                                            insets.systemWindowInsetRight,
-                                            0 // Zero bottom inset
-                                        )
+                            val modifiedInsets = WindowInsets.Builder(insets)
+                                .setSystemWindowInsets(
+                                    Insets.of(
+                                        insets.systemWindowInsetLeft,
+                                        insets.systemWindowInsetTop,
+                                        insets.systemWindowInsetRight,
+                                        0 // Zero bottom inset
                                     )
-                                    .build()
-                            } else {
-                                insets // Fallback for older API levels
-                            }
+                                )
+                                .build()
                             param.args[0] = modifiedInsets
                         }
                     }
@@ -296,19 +287,19 @@ class GboardHandler : IHook() {
                 // During IME window setup, intercept navigation bar configuration
                 val window = param.thisObject as? Window
                 window?.decorView?.let { decorView ->
-                    decorView.setOnApplyWindowInsetsListener { view, insets ->
-                        // Modify insets to eliminate bottom spacing
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        decorView.setOnApplyWindowInsetsListener { _, insets ->
+                            // Modify insets to eliminate bottom spacing
                             WindowInsets.Builder(insets)
                                 .setSystemWindowInsets(
-                                    insets.systemWindowInsetLeft,
-                                    insets.systemWindowInsetTop,
-                                    insets.systemWindowInsetRight,
-                                    0
+                                    Insets.of(
+                                        insets.systemWindowInsetLeft,
+                                        insets.systemWindowInsetTop,
+                                        insets.systemWindowInsetRight,
+                                        0 // Zero bottom inset
+                                    )
                                 )
                                 .build()
-                        } else {
-                            insets
                         }
                     }
                 }
