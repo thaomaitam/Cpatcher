@@ -3,13 +3,12 @@ dexkit = "2.0.6"
 kotlin = "2.1.21"
 agp = "8.10.1"
 xposed = "82"
-annotation = "1.8.1"
 hidden-api = "4.4.0"
 
 [libraries]
 dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
 xposed-api = { module = "de.robv.android.xposed:api", version.ref = "xposed" }
-androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
+androidx-annotation-jvm = { group = "androidx.annotation", name = "annotation-jvm", version = "1.9.1" }
 dev-rikka-hidden-compat = { module = "dev.rikka.hidden:compat", version.ref = "hidden-api" }
 dev-rikka-hidden-stub = { module = "dev.rikka.hidden:stub", version.ref = "hidden-api" }
 
