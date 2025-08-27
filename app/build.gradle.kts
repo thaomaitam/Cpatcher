@@ -45,7 +45,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.cpatcher"
+        applicationId = "io.github.CachePurge"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -91,7 +91,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    namespace = "io.github.cpatcher"
+    namespace = "io.github.CachePurge"
     packaging {
         resources {
             excludes += "**"
