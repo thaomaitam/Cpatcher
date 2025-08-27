@@ -1,36 +1,27 @@
+// Entry.kt modification
 package io.github.cpatcher
 
-import android.content.res.XModuleResources
 import de.robv.android.xposed.IXposedHookLoadPackage
-import de.robv.android.xposed.IXposedHookZygoteInit
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.cpatcher.bridge.LoadPackageParam
-import io.github.cpatcher.handlers.QslockHandler
-import io.github.cpatcher.handlers.TermuxHandler
+import io.github.cpatcher.handlers.UniversalCachePurgeHandler
 
-class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
-    companion object {
-        lateinit var modulePath: String
-        val moduleRes: XModuleResources by lazy {
-            XModuleResources.createInstance(
-                modulePath,
-                null
-            )
-        }
-    }
-
-    override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam) {
-        modulePath = startupParam.modulePath
-    }
-
+class Entry : IXposedHookLoadPackage {
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
+        // CRITICAL: Package isolation enforcement
+        // Only affects packages explicitly scoped in LSPosed Manager
+        
         logI("Cpatcher: ${lpparam.packageName} ${lpparam.processName}")
-        val handler = when (lpparam.packageName) {
-            "com.termux" -> TermuxHandler()
-            "com.android.systemui" -> QslockHandler()
-        else -> return
+        
+        // System package exclusion
+        if (lpparam.packageName == "android" || 
+            lpparam.packageName.startsWith("com.android.systemui")) {
+            return
         }
-        logPrefix = "[${handler.javaClass.simpleName}] "
-        handler.hook(LoadPackageParam(lpparam))
+        
+        // Universal cache handler - applies ONLY to scoped packages
+        val cacheHandler = UniversalCachePurgeHandler()
+        logPrefix = "[CachePurge] "
+        cacheHandler.hook(LoadPackageParam(lpparam))
     }
 }
