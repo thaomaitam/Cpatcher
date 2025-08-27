@@ -7,6 +7,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
 import io.github.cpatcher.bridge.LoadPackageParam
 import io.github.cpatcher.handlers.QslockHandler
 import io.github.cpatcher.handlers.TermuxHandler
+import io.github.cpatcher.handlers.BilibiliHandler
 
 class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
     companion object {
@@ -28,6 +29,7 @@ class Entry : IXposedHookLoadPackage, IXposedHookZygoteInit {
         val handler = when (lpparam.packageName) {
             "com.termux" -> TermuxHandler()
             "com.android.systemui" -> QslockHandler()
+            "com.bstar.intl" -> BilibiliHandler()
         else -> return
         }
         logPrefix = "[${handler.javaClass.simpleName}] "
