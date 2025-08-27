@@ -11,7 +11,7 @@ class Entry : IXposedHookLoadPackage {
         // CRITICAL: Package isolation enforcement
         // Only affects packages explicitly scoped in LSPosed Manager
         
-        logI("Cpatcher: ${lpparam.packageName} ${lpparam.processName}")
+        logI("CachePurge: ${lpparam.packageName} ${lpparam.processName}")
         
         // System package exclusion
         if (lpparam.packageName == "android" || 
