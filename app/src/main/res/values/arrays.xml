@@ -3,5 +3,6 @@
     <string-array name="xposedscope">
         <item>com.termux</item>
         <item>com.android.systemui</item>
+        <item>com.bstar.intl</item>
     </string-array>
 </resources>
