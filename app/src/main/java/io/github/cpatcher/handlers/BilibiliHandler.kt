@@ -2,6 +2,8 @@ package io.github.cpatcher.handlers
 
 import android.content.Context
 import io.github.cpatcher.arch.IHook
+import io.github.cpatcher.arch.ObfsInfo
+import io.github.cpatcher.arch.ObfsTable
 import io.github.cpatcher.arch.createObfsTable
 import io.github.cpatcher.arch.hookAfter
 import io.github.cpatcher.arch.hookBefore
@@ -11,6 +13,7 @@ import io.github.cpatcher.arch.call
 import io.github.cpatcher.arch.getObjAs
 import io.github.cpatcher.arch.getObjAsN
 import io.github.cpatcher.arch.setObj
+import io.github.cpatcher.arch.toObfsInfo
 import io.github.cpatcher.bridge.HookParam
 import io.github.cpatcher.logI
 import io.github.cpatcher.logE
@@ -122,14 +125,14 @@ class BilibiliHandler : IHook() {
                 }
             }.firstOrNull()
             
-            mapOf(
-                KEY_PREMIUM_CHECK to premiumCheck.toObfsInfo(),
-                KEY_AD_CONTROLLER to adController.toObfsInfo(),
-                KEY_QUALITY_LIMITER to qualityLimiter.toObfsInfo()
-            ).apply {
-                userInfo?.let { this + (KEY_USER_INFO to it.toObfsInfo()) }
-                adRequest?.let { this + (KEY_AD_REQUEST to it.toObfsInfo()) }
-                streamResolver?.let { this + (KEY_STREAM_RESOLVER to it.toObfsInfo()) }
+            // CRITICAL FIX: Proper Map construction with nullable entries
+            buildMap<String, ObfsInfo> {
+                put(KEY_PREMIUM_CHECK, premiumCheck.toObfsInfo())
+                put(KEY_AD_CONTROLLER, adController.toObfsInfo())
+                put(KEY_QUALITY_LIMITER, qualityLimiter.toObfsInfo())
+                userInfo?.let { put(KEY_USER_INFO, it.toObfsInfo()) }
+                adRequest?.let { put(KEY_AD_REQUEST, it.toObfsInfo()) }
+                streamResolver?.let { put(KEY_STREAM_RESOLVER, it.toObfsInfo()) }
             }
         }
         
