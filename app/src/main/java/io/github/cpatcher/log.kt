@@ -3,7 +3,7 @@ package io.github.cpatcher
 import android.util.Log
 
 var logPrefix: String = ""
-const val LOG_TAG = "Cpatcher"
+const val LOG_TAG = "CachePurge"
 
 fun logD(msg: String, t: Throwable? = null) {
     Log.d(LOG_TAG, "$logPrefix$msg", t)
