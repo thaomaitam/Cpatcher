@@ -1,277 +1,287 @@
 package io.github.cpatcher.handlers
 
 import android.content.Context
-import io.github.cpatcher.arch.IHook
-import io.github.cpatcher.arch.ObfsInfo
-import io.github.cpatcher.arch.ObfsTable
-import io.github.cpatcher.arch.createObfsTable
-import io.github.cpatcher.arch.hookAfter
-import io.github.cpatcher.arch.hookBefore
-import io.github.cpatcher.arch.hookReplace
-import io.github.cpatcher.arch.hookAllConstant
-import io.github.cpatcher.arch.call
-import io.github.cpatcher.arch.getObjAs
-import io.github.cpatcher.arch.getObjAsN
-import io.github.cpatcher.arch.setObj
-import io.github.cpatcher.arch.toObfsInfo
+import io.github.cpatcher.arch.*
 import io.github.cpatcher.bridge.HookParam
 import io.github.cpatcher.logI
 import io.github.cpatcher.logE
+import io.github.cpatcher.logD
 import org.luckypray.dexkit.query.enums.StringMatchType
 import java.lang.reflect.Modifier
 
 class BilibiliHandler : IHook() {
     companion object {
-        // Version control constants
-        private const val TABLE_VERSION = 1
+        private const val TABLE_VERSION = 2  // Incremented for cache invalidation
         
-        // System constants for premium features
+        // Quality constants
         private const val QUALITY_1080P = 1080
         private const val QUALITY_4K = 2160
-        private const val AD_TYPE_PREROLL = 1
-        private const val AD_TYPE_MIDROLL = 2
         
-        // Logical keys for obfuscation mapping
+        // Logical keys
         private const val KEY_PREMIUM_CHECK = "premium_status_check"
         private const val KEY_AD_CONTROLLER = "advertisement_controller"
         private const val KEY_QUALITY_LIMITER = "quality_restriction_method"
-        private const val KEY_USER_INFO = "user_info_provider"
-        private const val KEY_AD_REQUEST = "ad_request_builder"
-        private const val KEY_STREAM_RESOLVER = "stream_quality_resolver"
+        private const val KEY_USER_MODEL = "user_model_class"
+        private const val KEY_QUALITY_CONFIG = "quality_configuration"
     }
     
     override fun onHook() {
-        // Phase 1: Package validation
+        // Phase 1: Enhanced package and process validation
         if (loadPackageParam.packageName != "com.bstar.intl") return
         
-        // Phase 2: Advanced fingerprinting with multi-criteria detection
-        val obfsTable = createObfsTable("bilibili", TABLE_VERSION) { bridge ->
+        // Critical: Skip sub-processes to prevent redundant hooking
+        if (loadPackageParam.processName != loadPackageParam.packageName) {
+            logI("${this::class.simpleName}: Skipping sub-process ${loadPackageParam.processName}")
+            return
+        }
+        
+        // Phase 2: Diagnostic-enhanced fingerprinting
+        val obfsTable = try {
+            createAdvancedObfsTable()
+        } catch (e: Exception) {
+            logE("${this::class.simpleName}: Fingerprinting catastrophic failure", e)
+            // Fallback to direct class hooking strategy
+            implementFallbackStrategy()
+            return
+        }
+        
+        // Phase 3: Selective hook deployment
+        runCatching {
+            implementPremiumBypass(obfsTable)
+        }.onFailure { logE("Premium bypass failed", it) }
+        
+        runCatching {
+            implementAdBlocking(obfsTable)
+        }.onFailure { logE("Ad blocking failed", it) }
+        
+        runCatching {
+            implementQualityUnlock(obfsTable)
+        }.onFailure { logE("Quality unlock failed", it) }
+        
+        logI("${this::class.simpleName}: Hook deployment completed")
+    }
+    
+    private fun createAdvancedObfsTable(): ObfsTable {
+        return createObfsTable("bilibili", TABLE_VERSION) { bridge ->
             
-            // Premium status verification method
-            val premiumCheck = bridge.findMethod {
+            // Enhanced diagnostic logging
+            logD("Starting DexKit analysis for Bilibili")
+            
+            // Strategy 1: Broader premium detection patterns
+            val premiumMethods = bridge.findMethod {
                 matcher {
-                    usingStrings = listOf(
-                        "premium_status",
-                        "vip_info",
-                        "user_status"
+                    // Relaxed string matching - partial matches
+                    usingStrings(StringMatchType.Contains, 
+                        "vip", "premium", "member", "subscription"
                     )
                     returnType = "boolean"
-                    modifiers = Modifier.PUBLIC or Modifier.FINAL
                 }
-            }.singleOrNull() ?: bridge.findMethod {
-                // Fallback pattern
-                matcher {
-                    usingStrings = listOf("isPremium", "vip_type")
-                    returnType = "boolean"
-                }
-            }.firstOrNull() ?: error("Premium check fingerprint failed")
+            }.also { 
+                logD("Found ${it.size} potential premium methods")
+            }
             
-            // Advertisement controller identification
+            // Intelligent selection from candidates
+            val premiumCheck = premiumMethods.firstOrNull { method ->
+                // Additional validation criteria
+                method.paramTypes.isEmpty() || 
+                method.paramTypes.size == 1 && method.paramTypes[0] == "android.content.Context"
+            } ?: premiumMethods.firstOrNull() 
+              ?: error("Premium fingerprint failed after ${premiumMethods.size} candidates")
+            
+            // Strategy 2: Advertisement controller with relaxed criteria
             val adController = bridge.findMethod {
                 matcher {
-                    usingStrings = listOf(
-                        "ad_request",
-                        "advertisement",
-                        "creative_id"
+                    usingStrings(StringMatchType.Contains, "ad", "creative")
+                    // No return type restriction - could be void or boolean
+                }
+            }.firstOrNull { method ->
+                method.paramTypes.any { it.contains("String") }
+            } ?: bridge.findMethod {
+                matcher {
+                    // Backup pattern - constructor/initialization methods
+                    name(StringMatchType.Contains, "initAd", "loadAd", "showAd")
+                }
+            }.firstOrNull()
+            
+            // Strategy 3: Quality configuration detection
+            val qualityMethods = bridge.findMethod {
+                matcher {
+                    usingStrings(StringMatchType.Contains, 
+                        "quality", "resolution", "1080", "720", "480"
                     )
-                    paramTypes = listOf("java.lang.String", "int")
+                    returnType(StringMatchType.Contains, "int", "Integer", "String")
                 }
-            }.firstOrNull() ?: bridge.findMethod {
-                // Alternative pattern
-                matcher {
-                    usingStrings = listOf("showAd", "loadAd")
-                    returnType = "void"
-                }
-            }.firstOrNull() ?: error("Ad controller fingerprint failed")
+            }.also {
+                logD("Found ${it.size} quality-related methods")
+            }
             
-            // Quality restriction enforcement
-            val qualityLimiter = bridge.findMethod {
-                matcher {
-                    usingStrings = listOf(
-                        "quality_limit",
-                        "max_quality",
-                        "1080",
-                        "720"
-                    )
-                    returnType = "int"
-                }
-            }.firstOrNull() ?: bridge.findMethod {
-                matcher {
-                    usingStrings = listOf("getMaxQuality", "resolution")
-                    returnType = "int"
-                }
-            }.firstOrNull() ?: error("Quality limiter fingerprint failed")
+            val qualityLimiter = qualityMethods.firstOrNull { method ->
+                method.returnType == "int" && method.paramTypes.size <= 1
+            } ?: qualityMethods.firstOrNull()
             
-            // User information provider
-            val userInfo = bridge.findMethod {
+            // Strategy 4: User model class identification
+            val userModelClass = bridge.findClass {
                 matcher {
-                    usingStrings = listOf("user_info", "uid", "access_token")
-                    returnType = "java.lang.Object"
+                    fields {
+                        addAll(
+                            listOf("vip", "expire", "uid"),
+                            StringMatchType.Contains
+                        )
+                    }
                 }
-            }.firstOrNull()
+            }.firstOrNull()?.also {
+                logD("Identified user model class: ${it.className}")
+            }
             
-            // Ad request builder
-            val adRequest = bridge.findMethod {
-                matcher {
-                    usingStrings = listOf("ad_extra", "cid", "aid")
-                    paramTypes = listOf("java.lang.String")
-                }
-            }.firstOrNull()
-            
-            // Stream quality resolver
-            val streamResolver = bridge.findMethod {
-                matcher {
-                    usingStrings = listOf("stream_url", "quality_id", "qn")
-                }
-            }.firstOrNull()
-            
-            // CRITICAL FIX: Proper Map construction with nullable entries
+            // Build result map with validation
             buildMap<String, ObfsInfo> {
                 put(KEY_PREMIUM_CHECK, premiumCheck.toObfsInfo())
-                put(KEY_AD_CONTROLLER, adController.toObfsInfo())
-                put(KEY_QUALITY_LIMITER, qualityLimiter.toObfsInfo())
-                userInfo?.let { put(KEY_USER_INFO, it.toObfsInfo()) }
-                adRequest?.let { put(KEY_AD_REQUEST, it.toObfsInfo()) }
-                streamResolver?.let { put(KEY_STREAM_RESOLVER, it.toObfsInfo()) }
+                adController?.let { 
+                    put(KEY_AD_CONTROLLER, it.toObfsInfo()) 
+                }
+                qualityLimiter?.let { 
+                    put(KEY_QUALITY_LIMITER, it.toObfsInfo()) 
+                }
+                userModelClass?.let {
+                    put(KEY_USER_MODEL, ObfsInfo(it.className, ""))
+                }
+            }.also {
+                logI("ObfsTable created with ${it.size} entries")
+            }
+        }
+    }
+    
+    private fun implementFallbackStrategy() {
+        logI("${this::class.simpleName}: Deploying fallback strategy")
+        
+        // Direct class targeting based on common patterns
+        val potentialClasses = listOf(
+            "com.bilibili.lib.account.model.AccountInfo",
+            "com.bilibili.lib.account.UserInfo",
+            "com.bstar.intl.model.User",
+            "com.biliintl.app.model.UserModel"
+        )
+        
+        potentialClasses.forEach { className ->
+            findClassOrNull(className)?.let { clazz ->
+                // Hook all boolean getters that might indicate premium
+                clazz.declaredMethods
+                    .filter { 
+                        it.returnType == Boolean::class.java &&
+                        it.parameterCount == 0 &&
+                        (it.name.contains("vip", true) || 
+                         it.name.contains("premium", true))
+                    }
+                    .forEach { method ->
+                        method.hookConstant(true)
+                        logD("Hooked fallback method: ${method.name}")
+                    }
             }
         }
         
-        // Phase 3: Strategic hook deployment
-        implementPremiumBypass(obfsTable)
-        implementAdBlocking(obfsTable)
-        implementQualityUnlock(obfsTable)
+        // Quality restriction bypass - common method names
+        val qualityMethods = listOf(
+            "getMaxQuality", "getQualityLimit", 
+            "getAvailableQualities", "checkQuality"
+        )
         
-        // Phase 4: Success validation
-        logI("${this::class.simpleName}: Successfully initialized premium bypass")
+        qualityMethods.forEach { methodName ->
+            runCatching {
+                findClass("com.bilibili.lib.media.resolver.resolve.BiliResolveResolver")
+                    .hookAllConstant(methodName, QUALITY_1080P)
+            }
+        }
     }
     
     private fun implementPremiumBypass(obfsTable: ObfsTable) {
-        runCatching {
-            val premiumInfo = obfsTable[KEY_PREMIUM_CHECK]!!
-            
-            // Primary strategy: Force premium status to true
-            findClass(premiumInfo.className).hookAllConstant(
-                premiumInfo.memberName, 
-                true
-            )
-            
-            // Secondary strategy: Manipulate user object fields
-            obfsTable[KEY_USER_INFO]?.let { userInfo ->
-                findClass(userInfo.className).hookAfter(userInfo.memberName) { param ->
-                    param.result?.let { userObj ->
-                        // Inject premium fields
+        val premiumInfo = obfsTable[KEY_PREMIUM_CHECK] ?: run {
+            logE("Premium check not found in ObfsTable")
+            return
+        }
+        
+        // Primary hook with diagnostic logging
+        findClass(premiumInfo.className).hookAllConstant(
+            premiumInfo.memberName, 
+            true
+        ).also {
+            logI("Premium bypass: Hooked ${it.size} methods")
+        }
+        
+        // User model manipulation if identified
+        obfsTable[KEY_USER_MODEL]?.let { userModel ->
+            if (userModel.className.isNotEmpty()) {
+                findClass(userModel.className).hookAllCAfter { param ->
+                    param.thisObject?.apply {
                         runCatching {
-                            userObj.setObj("vip_type", 2)  // Premium tier
-                            userObj.setObj("vip_status", 1) // Active status
-                            userObj.setObj("vip_expire", Long.MAX_VALUE)
-                            userObj.setObj("is_premium", true)
-                        }.onFailure { e ->
-                            logE("Premium field injection failed", e)
+                            // Attempt field injection with various naming patterns
+                            listOf("vip_type", "vipType", "mVipType").forEach { field ->
+                                runCatching { setObj(field, 2) }
+                            }
+                            listOf("vip_status", "vipStatus", "mVipStatus").forEach { field ->
+                                runCatching { setObj(field, 1) }
+                            }
+                            listOf("is_vip", "isVip", "mIsVip").forEach { field ->
+                                runCatching { setObj(field, true) }
+                            }
+                        }.onSuccess {
+                            logD("User model fields injected")
                         }
                     }
                 }
             }
-            
-            logI("Premium bypass hooks deployed")
-        }.onFailure { t ->
-            logE("Premium bypass implementation failed", t)
         }
     }
     
     private fun implementAdBlocking(obfsTable: ObfsTable) {
-        runCatching {
-            val adController = obfsTable[KEY_AD_CONTROLLER]!!
-            
-            // Primary: Neutralize ad controller
-            findClass(adController.className).hookBefore(adController.memberName) { param ->
-                // Prevent ad loading by intercepting before execution
+        obfsTable[KEY_AD_CONTROLLER]?.let { adInfo ->
+            findClass(adInfo.className).hookBefore(adInfo.memberName) { param ->
                 param.result = null
-                logI("Ad request intercepted and blocked")
+                logD("Ad request blocked: ${adInfo.memberName}")
             }
-            
-            // Secondary: Block ad request construction
-            obfsTable[KEY_AD_REQUEST]?.let { adRequest ->
-                findClass(adRequest.className).hookReplace(adRequest.memberName) { param ->
-                    // Return empty/null to prevent ad data fetch
-                    null
-                }
+        }
+        
+        // Generic ad suppression
+        val adPatterns = listOf(
+            "com.bilibili.ad",
+            "com.bilibili.lib.ad",
+            "com.bstar.ad"
+        )
+        
+        adPatterns.forEach { packagePattern ->
+            runCatching {
+                val adClass = classLoader.loadClass(packagePattern)
+                adClass.declaredMethods
+                    .filter { it.name.contains("load") || it.name.contains("show") }
+                    .forEach { it.hookNop() }
             }
-            
-            // Tertiary: Generic ad-related method suppression
-            val adClasses = listOf(
-                "com.bilibili.ad.AdManager",
-                "com.bilibili.lib.ad.AdLoader",
-                "tv.danmaku.bili.ui.video.ad.AdController"
-            )
-            
-            adClasses.forEach { className ->
-                findClassOrNull(className)?.let { clazz ->
-                    clazz.hookAllConstant("loadAd", null)
-                    clazz.hookAllConstant("showAd", null)
-                    clazz.hookAllConstant("requestAd", null)
-                }
-            }
-            
-            logI("Ad blocking mechanisms engaged")
-        }.onFailure { t ->
-            logE("Ad blocking implementation failed", t)
         }
     }
     
     private fun implementQualityUnlock(obfsTable: ObfsTable) {
-        runCatching {
-            val qualityLimiter = obfsTable[KEY_QUALITY_LIMITER]!!
-            
-            // Primary: Override quality restrictions
-            findClass(qualityLimiter.className).hookReplace(qualityLimiter.memberName) { param ->
-                // Return maximum available quality
-                QUALITY_1080P
+        obfsTable[KEY_QUALITY_LIMITER]?.let { qualityInfo ->
+            findClass(qualityInfo.className).hookReplace(qualityInfo.memberName) { 
+                QUALITY_1080P 
             }
-            
-            // Secondary: Stream resolver manipulation
-            obfsTable[KEY_STREAM_RESOLVER]?.let { resolver ->
-                findClass(resolver.className).hookBefore(resolver.memberName) { param ->
-                    // Inject high quality parameter
+        }
+        
+        // Stream parameter injection
+        runCatching {
+            findClass("com.bilibili.lib.media.MediaService")
+                .hookAllBefore("requestStream") { param ->
                     param.args.forEachIndexed { index, arg ->
-                        if (arg is Int && arg < QUALITY_1080P) {
-                            param.args[index] = QUALITY_1080P
-                        }
-                        if (arg is String && arg.contains("qn=")) {
-                            param.args[index] = arg.replace(
-                                Regex("qn=\\d+"), 
-                                "qn=$QUALITY_1080P"
-                            )
+                        when (arg) {
+                            is Int -> if (arg < QUALITY_1080P) {
+                                param.args[index] = QUALITY_1080P
+                            }
+                            is String -> if (arg.contains("qn=")) {
+                                param.args[index] = arg.replace(
+                                    Regex("qn=\\d+"), 
+                                    "qn=$QUALITY_1080P"
+                                )
+                            }
                         }
                     }
                 }
-            }
-            
-            // Tertiary: Quality selection UI manipulation
-            val qualitySelectors = listOf(
-                "getAvailableQualities",
-                "getSupportedQualities",
-                "getQualityList"
-            )
-            
-            qualitySelectors.forEach { methodName ->
-                runCatching {
-                    findClass("com.bilibili.lib.media.resolver.resolve.BiliResolveResolver")
-                        .hookAfter(methodName) { param ->
-                            (param.result as? List<*>)?.let { qualities ->
-                                // Ensure 1080p is available
-                                if (!qualities.contains(QUALITY_1080P)) {
-                                    val mutableList = qualities.toMutableList()
-                                    mutableList.add(0, QUALITY_1080P)
-                                    param.result = mutableList
-                                }
-                            }
-                        }
-                }
-            }
-            
-            logI("Quality restrictions bypassed")
-        }.onFailure { t ->
-            logE("Quality unlock implementation failed", t)
         }
     }
 }
